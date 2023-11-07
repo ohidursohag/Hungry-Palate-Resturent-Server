@@ -40,6 +40,34 @@ async function run() {
 }
 run().catch(console.dir);
 
+
+// Database connection
+const categoryConnection = client.db('HungryPalateDB').collection('Categories');
+const allFoodConnection = client.db('HungryPalateDB').collection('AllFoods');
+
+
+//Categories:: Get all Categories 
+app.get('/api/v1/categories', async (req, res) => {
+   try {
+      const result = await categoryConnection.find().toArray();
+      return res.send(result);
+   } catch (error) {
+      return res.send({ error: true, message: error.message });
+   }
+})
+
+// All Food:: All Foods Items
+app.get('/api/v1/all-food-items', async (req, res) => {
+   try {
+      const result = await allFoodConnection.find().toArray();
+      return res.send(result);
+   } catch (error) {
+      return res.send({ error: true, message: error.message });
+   }
+})
+
+
+// Testing Server
 app.get('/', async (req, res) => {
    res.send('Welcome to Hungry Palate')
 });
