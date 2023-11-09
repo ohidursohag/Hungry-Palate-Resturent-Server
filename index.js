@@ -128,19 +128,52 @@ app.get('/api/v1/all-food-items', async (req, res) => {
 
 //GET SINGLE Food data
 app.get('/api/v1/foods/:id', async (req, res) => {
-   const id = req.params.id;
-   const query = { _id: new ObjectId(id) };
-   const result = await allFoodConnection.findOne(query);
-   res.send(result);
+   try {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await allFoodConnection.findOne(query);
+      res.send(result);
+   } catch (error) {
+      return res.send({ error: true, message: error.message });
+   }
 });
 
 //GET Categories Food data
 app.get('/api/v1/food-category/:category', async (req, res) => {
-   const category = req.params.category;
-   console.log(category);
-   const query = { foodCategory: { $regex: category, $options: "i" } };
-   const result = await allFoodConnection.find(query).toArray();
-   res.send(result);
+   try {
+      const sortObj = {};
+      const queryObj = {};
+      const category = req.params.category;
+      const sortField = req.query?.sortField;      
+      const sortOrder = req.query?.sortOrder;
+      console.log(sortField, sortOrder);
+      // Searching by name
+      const searchField = req.query?.searchField    
+      // pagination
+      const page = Number(req.query?.page);
+      const limit = Number(req.query?.limit);
+      const skip = (page - 1) * limit;
+   //   console.log(category);
+     if (sortField && sortOrder) {
+        sortObj[sortField] = sortOrder;
+     }
+     if (searchField) {
+        queryObj.foodName = { $regex: searchField, $options: "i" };
+        queryObj.foodCategory = { $regex: category, $options: "i" };
+     } else {
+        queryObj.foodCategory = { $regex: category, $options: "i" };
+     }
+   //   const query = { foodCategory: { $regex: category, $options: "i" } };
+      const result = await allFoodConnection.find(queryObj).skip(skip).limit(limit).sort(sortObj).toArray();
+      const queryResult = await allFoodConnection.find(queryObj).toArray();
+      const totalQuerydata = queryResult.length;
+
+      return res.send({
+         result, totalQuerydata
+      });
+  } catch (error) {
+     return res.send({ error: true, message: error.message });
+  }
 });
 
 // Testing Server
