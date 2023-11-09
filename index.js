@@ -18,7 +18,30 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser())
 
+// My MiddleWares
+const logger = async (req, res, next) => {
+   console.log('Called: ', req.hostname, req.originalUrl);
+   next();
+}
 
+// varify token
+const verifyToken = async (req, res, next) => {
+
+   // check if Cookie available
+   const token = req.cookies?.token;
+   // console.log('Token: ', token);
+   if (!token) {
+      return res.status(401).send({ message: 'UnAuthorized Access', code: 401 });
+   }
+   jwt.verify(token, process.env.ACCESS_TOKEN, (error, decode) => {
+      if (error) {
+         return res.status(401).send({ message: 'UnAuthorized Access', code: 401 });
+      }
+      req.user = decode;
+      next();
+   })
+
+};
 
 
 const uri = process.env.MONGO_DB_URI;
@@ -52,6 +75,19 @@ const categoryConnection = client.db('HungryPalateDB').collection('Categories');
 const allFoodConnection = client.db('HungryPalateDB').collection('AllFoods');
 const orderedFoodConnection = client.db('HungryPalateDB').collection('OrderdFoods');
 
+// JWT:: create Access Token
+app.post('/jwt', logger, async (req, res) => {
+   const user = req.body
+   console.log(user);
+   const token = jwt.sign(user, process.env.ACCESS_TOKEN, { expiresIn: '1h' })
+
+   res
+      .cookie('token', token, {
+         httpOnly: true,
+         secure: false,
+      })
+      .send({ Success: true });
+})
 
 //Categories:: Get all Categories 
 app.get('/api/v1/categories', async (req, res) => {
@@ -126,10 +162,9 @@ app.post('/api/v1/add-foods', async (req, res) => {
 })
 
 // get user specific Added foods data
-app.get('/api/v1/user/user-added-food', async (req, res) => {
-   const email = req.query.email;
-   
+app.get('/api/v1/user/user-added-food', verifyToken, async (req, res) => {
    try {
+      const email = req.query.email;   
       let query = {};
       if (email) {
          query = { chefEmail: email }
@@ -143,7 +178,7 @@ app.get('/api/v1/user/user-added-food', async (req, res) => {
 })
 
 //GET SINGLE Food data
-app.get('/api/v1/foods/:id', async (req, res) => {
+app.get('/api/v1/foods/:id', verifyToken, async (req, res) => {
    try {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -155,7 +190,7 @@ app.get('/api/v1/foods/:id', async (req, res) => {
 });
 
 // Update Food data 
-app.patch('/api/v1/user/update-food/:id', async (req, res) => {
+app.patch('/api/v1/user/update-food/:id', verifyToken, async (req, res) => {
    const id = req.params.id;
    const updateData = req.body;
    const filter = { _id: new ObjectId(id) } 
@@ -208,7 +243,7 @@ app.get('/api/v1/food-category/:category', async (req, res) => {
 // Orderd Fooods api
 
 // get user specific order data
-app.get('/api/v1/user/orederd-food', async (req, res) => {
+app.get('/api/v1/user/orederd-food', verifyToken, async (req, res) => {
    const email = req.query.email;
    console.log(email);
    try {
@@ -235,7 +270,7 @@ app.post('/api/v1/user/order-food', async (req, res) => {
 })
 
 // Delete::  single Ordered food items
-app.delete('/api/v1/user/delete-food/:orderedFoodId', async (req, res) => {
+app.delete('/api/v1/user/delete-food/:orderedFoodId',  async (req, res) => {
    try {
       const id = req.params.orderedFoodId;
       console.log(id);
