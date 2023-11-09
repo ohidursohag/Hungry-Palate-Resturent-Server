@@ -111,6 +111,18 @@ app.get('/api/v1/all-food-items', async (req, res) => {
    }
 })
 
+app.post('/api/v1/add-foods', async (req, res) => {
+   try {
+      const addFoodData = req.body;
+      console.log(addFoodData);
+      const result = await allFoodConnection.insertOne(addFoodData)
+      console.log(result);
+      return res.send(result)
+   } catch (error) {
+      return res.send({ error: true, message: error.message });
+   }
+})
+
 //GET SINGLE Food data
 app.get('/api/v1/foods/:id', async (req, res) => {
    try {
@@ -189,6 +201,20 @@ app.post('/api/v1/user/order-food', async (req, res) => {
       return res.send({ error: true, message: error.message });
    }
 })
+
+// Delete::  single Ordered food items
+app.delete('/api/v1/user/delete-food/:orderedFoodId', async (req, res) => {
+   try {
+      const id = req.params.orderedFoodId;
+      console.log(id);
+      const query = { _id: new ObjectId(id) };
+      const result = await orderedFoodConnection.deleteOne(query)
+      return res.send(result)
+   } catch (error) {
+      return res.send({ error: true, message: error.message });
+   }
+})
+
 
 // Testing Server
 app.get('/', async (req, res) => {
