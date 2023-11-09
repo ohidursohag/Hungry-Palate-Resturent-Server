@@ -163,6 +163,23 @@ app.get('/api/v1/food-category/:category', async (req, res) => {
 
 // Orderd Fooods api
 
+// get user specific order data
+app.get('/api/v1/user/orederd-food', async (req, res) => {
+   const email = req.query.email;
+   console.log(email);
+   try {
+      let query = {};
+      if (email) {
+         query = { customerEmail: email }
+      }
+      const result = await orderedFoodConnection.find(query).toArray();
+      return res.send(result);
+   } catch (error) {
+      return res.send({ error: true, message: error.message });
+   }
+})
+
+
 app.post('/api/v1/user/order-food', async (req, res) => {
    try {
       const orderdFoodData = req.body;
