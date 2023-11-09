@@ -2,14 +2,17 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000;
 require('dotenv').config();
 const app = express();
 
 //middlewaer 
 app.use(cors({
-   origin: ["http://localhost:5173"],
+   origin: [
+      "http://localhost:5173",
+      "https://hungry-palate.web.app",
+      'https://hungry-palate.firebaseapp.com'],
    credentials: true,
 }));
 app.use(express.json());
@@ -74,10 +77,15 @@ app.get('/api/v1/categories', async (req, res) => {
 // http://localhost:5000/api/v1/all-food-items
 // http://localhost:5000/api/v1/all-food-items?page=1&limit=10
 
+// Search Api Format::
+// http://localhost:5000/api/v1/all-food-items
+// http://localhost:5000/api/v1/all-food-items?searchField=Grilled 
+
 app.get('/api/v1/all-food-items', async (req, res) => {
    try {
-      const queryObj = {};
+      let queryObj = {};
       const sortObj = {};
+      // const searchObj = {};
       // filtering
       const category = req.query?.category;
       // sorting
@@ -87,6 +95,8 @@ app.get('/api/v1/all-food-items', async (req, res) => {
       const page = Number(req.query?.page);
       const limit = Number(req.query?.limit);
       const skip = (page - 1) * limit;
+      // Searching by name
+      const searchField = req.query?.searchField
 
       // console.log(sortField, sortOrder);
       if (category) {
@@ -95,19 +105,43 @@ app.get('/api/v1/all-food-items', async (req, res) => {
       if (sortField && sortOrder) {
          sortObj[sortField] = sortOrder;
       }
+      if (searchField) {
+         queryObj.foodName = { $regex: searchField, $options: "i" }
+         // queryObj.foodCategory = '';
+      }
 
       const result = await allFoodConnection.find(queryObj).skip(skip).limit(limit).sort(sortObj).toArray();
 
-      // count Data
+      const queryResult = await allFoodConnection.find(queryObj).toArray();
+      const totalQuerydata = queryResult.length;
+      // count Data     
       const total = await allFoodConnection.countDocuments()
+      console.log(total);
+      console.log(totalQuerydata);
       return res.send({
-         total,result
-      });
+         total, result, totalQuerydata
+      });     
    } catch (error) {
       return res.send({ error: true, message: error.message });
    }
 })
 
+//GET SINGLE Food data
+app.get('/api/v1/foods/:id', async (req, res) => {
+   const id = req.params.id;
+   const query = { _id: new ObjectId(id) };
+   const result = await allFoodConnection.findOne(query);
+   res.send(result);
+});
+
+//GET Categories Food data
+app.get('/api/v1/food-category/:category', async (req, res) => {
+   const category = req.params.category;
+   console.log(category);
+   const query = { foodCategory: { $regex: category, $options: "i" } };
+   const result = await allFoodConnection.find(query).toArray();
+   res.send(result);
+});
 
 // Testing Server
 app.get('/', async (req, res) => {
