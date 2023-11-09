@@ -64,6 +64,8 @@ app.get('/api/v1/categories', async (req, res) => {
 })
 
 
+
+
 // All Food:: All Foods Items
 
 app.get('/api/v1/all-food-items', async (req, res) => {
@@ -123,6 +125,23 @@ app.post('/api/v1/add-foods', async (req, res) => {
    }
 })
 
+// get user specific Added foods data
+app.get('/api/v1/user/user-added-food', async (req, res) => {
+   const email = req.query.email;
+   
+   try {
+      let query = {};
+      if (email) {
+         query = { chefEmail: email }
+      }
+      const result = await allFoodConnection.find(query).toArray();
+      console.log(email);
+      return res.send(result);
+   } catch (error) {
+      return res.send({ error: true, message: error.message });
+   }
+})
+
 //GET SINGLE Food data
 app.get('/api/v1/foods/:id', async (req, res) => {
    try {
@@ -133,6 +152,19 @@ app.get('/api/v1/foods/:id', async (req, res) => {
    } catch (error) {
       return res.send({ error: true, message: error.message });
    }
+});
+
+// Update Food data 
+app.patch('/api/v1/user/update-food/:id', async (req, res) => {
+   const id = req.params.id;
+   const updateData = req.body;
+   const filter = { _id: new ObjectId(id) } 
+   const updatedProduct = { $set: updateData }
+   const result = await allFoodConnection.updateOne(filter, updatedProduct);
+   console.log(id);
+   console.log(updateData);
+   console.log(result);
+   res.send(result);
 });
 
 //GET Categories Food data
