@@ -50,6 +50,7 @@ run().catch(console.dir);
 // Database connection
 const categoryConnection = client.db('HungryPalateDB').collection('Categories');
 const allFoodConnection = client.db('HungryPalateDB').collection('AllFoods');
+const orderedFoodConnection = client.db('HungryPalateDB').collection('OrderdFoods');
 
 
 //Categories:: Get all Categories 
@@ -64,22 +65,6 @@ app.get('/api/v1/categories', async (req, res) => {
 
 
 // All Food:: All Foods Items
-
-// Filtering  Api Format::
-// http://localhost:5000/api/v1/all-food-items
-// http://localhost:5000/api/v1/all-food-items?category=vegetarian_or_vegan
-
-// Sorting  Api Format::
-// http://localhost:5000/api/v1/all-food-items
-// http://localhost:5000/api/v1/all-food-items?sortField=price&sortOrder=asc/desc
-
-// Paginations Api Format::
-// http://localhost:5000/api/v1/all-food-items
-// http://localhost:5000/api/v1/all-food-items?page=1&limit=10
-
-// Search Api Format::
-// http://localhost:5000/api/v1/all-food-items
-// http://localhost:5000/api/v1/all-food-items?searchField=Grilled 
 
 app.get('/api/v1/all-food-items', async (req, res) => {
    try {
@@ -175,6 +160,18 @@ app.get('/api/v1/food-category/:category', async (req, res) => {
      return res.send({ error: true, message: error.message });
   }
 });
+
+// Orderd Fooods api
+
+app.post('/api/v1/user/order-food', async (req, res) => {
+   try {
+      const orderdFoodData = req.body;
+      const result = await orderedFoodConnection.insertOne(orderdFoodData)
+      return res.send(result)
+   } catch (error) {
+      return res.send({ error: true, message: error.message });
+   }
+})
 
 // Testing Server
 app.get('/', async (req, res) => {
